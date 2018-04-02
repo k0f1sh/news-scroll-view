@@ -24,12 +24,13 @@
 
 (defn -news-item []
   (fn []
-    [:div {:style {:whiteSpace "nowrap"
-                   :overflow "visible"
-                   :position "relative"
-                   :left (:current-relative-x @app-state)
-                   :font-size 60}}
-     [:strong (:current-news-msg @app-state)]]))
+    (let [msg (get (:news-list @app-state) (:current-news-index @app-state) no-news-message)]
+      [:div {:style {:whiteSpace "nowrap"
+                     :overflow "visible"
+                     :position "relative"
+                     :left (:current-relative-x @app-state)
+                     :font-size 60}}
+       [:strong msg]])))
 
 (def news-item
   (with-meta -news-item
@@ -57,11 +58,6 @@
    [:h3 "<news-scroll-view>"]
    [news-view]])
 
-(defn update-current-news-msg [{:keys [current-news-index news-list] :as app-state}]
-  (if (get news-list current-news-index)
-    (assoc-in app-state [:current-news-msg] (get news-list current-news-index))
-    (assoc-in app-state [:current-news-msg] no-news-message)))
-
 (defn update-state [{:keys [current-news-index current-relative-x news-list width box-width] :as app-state}]
   (when (and width box-width)
     (if (and (neg? current-relative-x)
@@ -75,7 +71,6 @@
 
 (defn main-loop []
   (swap! app-state update-state)
-  (swap! app-state update-current-news-msg)
   (js/window.requestAnimationFrame main-loop))
 
 (defn on-js-reload []
