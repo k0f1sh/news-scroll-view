@@ -5,7 +5,7 @@
 
 ;; TODO window resize
 
-(def scroll-speed 0.6)
+(def scroll-speed (* 40 (/ 1 60)))
 
 (def no-news-message "no news")
 
