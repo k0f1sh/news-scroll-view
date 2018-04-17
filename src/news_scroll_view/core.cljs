@@ -75,12 +75,10 @@
       [:div
        [:h3 "<news-scroll-view>"]
        [:button {:on-click (fn [_]
-                             (reset! news-list ["news1" "news2" "news3"])
-                             (println-str @news-list))}
+                             (reset! news-list ["news1" "news2" "news3"]))}
         "news-set 1"]
        [:button {:on-click (fn [_]
-                             (reset! news-list ["news4" "news5" "news6"])
-                             (println-str @news-list))}
+                             (reset! news-list ["news4" "news5" "news6"]))}
         "news-set 2"]
        [news-view @news-list]])))
 
