@@ -5,18 +5,9 @@
 
 ;; TODO window resize
 
-(def scroll-speed (* 40 (/ 1 60)))
+(def scroll-speed (* 100 (/ 1 60)))
 
 (def no-news-message "no news")
-
-(def app-state (r/atom {:current-relative-x 0
-                        :current-news-index 0
-                        :current-news-msg ""
-                        :news-list ["[category 1] news1"
-                                    "[category 2] news2"
-                                    "[category 3] news3"]
-                        :width 0
-                        :box-width 0}))
 
 (defn update-state [{:keys [current-news-index current-relative-x news-list width box-width] :as app-state}]
   (when (and width box-width)
@@ -28,10 +19,6 @@
                                              0
                                              (inc current-news-index))))
       (update-in app-state [:current-relative-x] #(- % scroll-speed)))))
-
-(defn- update-offset-width [key this]
-  (let [offset-width (.-offsetWidth (r/dom-node this))]
-                              (swap! app-state #(assoc-in % [key] offset-width))))
 
 (defn news-item [app-state]
   (r/create-class
@@ -49,18 +36,16 @@
                             (let [offset-width (.-offsetWidth (r/dom-node this))]
                               (swap! app-state #(assoc % :width offset-width))))}))
 
-(defn news-view []
+(defn news-view [news-list]
   (let [requested-animation (atom nil)
         app-state (r/atom {:current-relative-x 0
                            :current-news-index 0
                            :current-news-msg ""
-                           :news-list ["[category 1] news1"
-                                       "[category 2] news2"
-                                       "[category 3] news3"]
+                           :news-list news-list
                            :width 0
                            :box-width 0})]
     (r/create-class
-     {:reagent-render (fn []
+     {:reagent-render (fn [news-list]
                         [:div {:style {:display "flex"
                                        :justify-content "flex-start"
                                        :align-items "center"
@@ -77,12 +62,27 @@
                                   (reset! requested-animation (js/window.requestAnimationFrame loop-fn))))))
       :component-did-update (fn [this]
                               (let [offset-width (.-offsetWidth (r/dom-node this))]
-                                (swap! app-state #(assoc % :box-width offset-width))))})))
+                                (swap! app-state #(assoc % :box-width offset-width))))
+      :component-will-receive-props (fn [this [_ new-news-list]]
+                                      (let [box-width (:box-width @app-state)]
+                                        (swap! app-state #(assoc % :news-list new-news-list))
+                                        (swap! app-state #(assoc % :current-news-index 0))
+                                        (swap! app-state #(assoc % :current-relative-x box-width))))})))
 
 (defn first-component []
-  [:div
-   [:h3 "<news-scroll-view>"]
-   [news-view]])
+  (let [news-list (r/atom [])]
+    (fn []
+      [:div
+       [:h3 "<news-scroll-view>"]
+       [:button {:on-click (fn [_]
+                             (reset! news-list ["news1" "news2" "news3"])
+                             (println-str @news-list))}
+        "news-set 1"]
+       [:button {:on-click (fn [_]
+                             (reset! news-list ["news4" "news5" "news6"])
+                             (println-str @news-list))}
+        "news-set 2"]
+       [news-view @news-list]])))
 
 (defn on-js-reload []
   (r/render [first-component] (js/document.getElementById "app")))
