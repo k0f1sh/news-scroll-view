@@ -9,6 +9,10 @@
 
 (def no-news-message "no news")
 
+(defn- update-offset-width! [key state dom-node]
+  (let [offset-width (.-offsetWidth dom-node)]
+    (swap! state #(assoc % key offset-width))))
+
 (defn update-state [{:keys [current-news-index current-relative-x news-list width box-width] :as app-state}]
   (when (and width box-width)
     (if (and (neg? current-relative-x)
@@ -30,11 +34,9 @@
                                        :font-size 60}}
                          [:strong msg]]))
     :component-did-mount (fn [this]
-                           (let [offset-width (.-offsetWidth (r/dom-node this))]
-                             (swap! app-state #(assoc % :width offset-width))))
+                           (update-offset-width! :width app-state (r/dom-node this)))
     :component-did-update (fn [this]
-                            (let [offset-width (.-offsetWidth (r/dom-node this))]
-                              (swap! app-state #(assoc % :width offset-width))))}))
+                            (update-offset-width! :width app-state (r/dom-node this)))}))
 
 (defn news-view [news-list]
   (let [requested-animation (atom nil)
@@ -54,15 +56,13 @@
                                        :overflow-x "hidden"}}
                          [news-item app-state]])
       :component-did-mount (fn [this]
-                             (let [dom-node (r/dom-node this)
-                                   offset-width (.-offsetWidth dom-node)]
-                               (swap! app-state #(assoc % :box-width offset-width))
+                             (let [dom-node (r/dom-node this)]
+                               (update-offset-width! :box-width app-state dom-node)
                                ((fn loop-fn []
                                   (swap! app-state update-state)
                                   (reset! requested-animation (js/window.requestAnimationFrame loop-fn))))))
       :component-did-update (fn [this]
-                              (let [offset-width (.-offsetWidth (r/dom-node this))]
-                                (swap! app-state #(assoc % :box-width offset-width))))
+                              (update-offset-width! :box-width app-state (r/dom-node this)))
       :component-will-receive-props (fn [this [_ new-news-list]]
                                       (let [box-width (:box-width @app-state)]
                                         (swap! app-state #(assoc % :news-list new-news-list))
